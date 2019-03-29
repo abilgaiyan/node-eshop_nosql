@@ -96,7 +96,7 @@ class User {
       //return this.cart;
   }
 
-  deleteProductInCart(productId){
+  deleteProductFromCart(productId){
     const db = getDb();
     
     const updatedCartItems = [...this.cart.items];
