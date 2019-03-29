@@ -36,17 +36,32 @@ class User {
   }
 
   addToCart(product) {
-      console.log(this.cart);
+      
       
       if (!this.cart.items){
           this.cart.items = [];
       }
-    const productIndexinCart = this.cart.items.findIndex(p=> p._id.toString() === product._id.toString())  
-    let newQuantity =1;
+      //console.log('addtocart->',this.cart);
+    const productIndexinCart = this.cart
+      .items
+      .findIndex(p=> p.productId.toString() === product._id.toString());  
+    
+      const updatedCartItems = [...this.cart.items];
+      let newQuantity =1;
     if (productIndexinCart >=0){
-        newQuantity =  this.cart.items[productIndexinCart].quantity + 1;
+        newQuantity =  this
+                      .cart
+                      .items[productIndexinCart].quantity + 1;
+        updatedCartItems[productIndexinCart].quantity = newQuantity;              
     }
-    const updatedCart = { items: [{ productId: new ObjectId(product._id), quantity: newQuantity }] };
+    else{
+      updatedCartItems.push({
+         productId: new ObjectId(product._id), 
+         quantity: newQuantity 
+        })
+    }
+    
+    const updatedCart = { items: updatedCartItems };
     const db = getDb();
     return db
       .collection("users")
@@ -56,9 +71,50 @@ class User {
       );
   }
 
-  static getCart(){
-      return this.cart;
+   getCart(){
+      const db = getDb();
+      const productIds = this.cart.items.map(item => {
+        return item.productId;
+      })
+      return db
+        .collection('products')
+        .find({_id: {$in: productIds}})
+        .toArray()
+        .then(products =>{
+          return products.map(product =>{
+            return {
+              ...product,
+              quantity: this.cart.items.find(item =>{
+                return item.productId.toString() === product._id.toString()
+              }).quantity
+            }
+          })
+        })
+        .catch(err=>{
+          console.log(err);
+        });
+      //return this.cart;
   }
+
+  deleteProductInCart(productId){
+    const db = getDb();
+    
+    const updatedCartItems = [...this.cart.items];
+    const productIndexinCart = updatedCartItems.findIndex(item =>{
+      item.productId.toString() === productId.toString()
+    })
+    updatedCartItems.splice(productIndexinCart, 1);
+    const updatedCart ={items: updatedCartItems}
+    return db
+    .collection('users')
+    .updateOne(
+      { _id: new ObjectId(this._id)},
+      {$set: {cart: updatedCart}}
+    )
+
+          
+  }
+   
   static findByPk(userId) {
     const db = getDb();
     return db
