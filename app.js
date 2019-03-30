@@ -26,7 +26,7 @@ app.use((req,res,next)=>{
     User.findByPk('5c99c565e32a1e1c74b26a3e')
     .then(user=>{
       req.user = new User(user.name, user.email,user._id, user.cart);
-      console.log('user...', req.user);
+      //console.log('user...', req.user);
       next();
     })
     .catch(err=> {
